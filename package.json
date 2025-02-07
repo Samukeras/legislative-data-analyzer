@@ -1,0 +1,27 @@
+{
+  "name": "legislative-data-analyzer",
+  "version": "1.0.0",
+  "description": "Quorum Coding Challenge - Working with Legislative Data",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@babel/preset-env": "^7.24.0",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "jest-environment-jsdom",
+    "transform": {
+      "^.+\\.js$": "babel-jest"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Samukeras/legislative-data-analyzer.git"
+  },
+  "private": true
+}
