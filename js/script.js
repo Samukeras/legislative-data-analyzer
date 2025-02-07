@@ -19,6 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('legislatorsFile').addEventListener('change', (e) => handleFileUpload(e, 'legislators'));
     document.getElementById('votesFile').addEventListener('change', (e) => handleFileUpload(e, 'votes'));
     document.getElementById('voteResultsFile').addEventListener('change', (e) => handleFileUpload(e, 'voteResults'));
+
+    form.addEventListener('submit', handleFormSubmit);
 });
 
 // Funções de manipulação de arquivos
@@ -47,4 +49,61 @@ function parseCSV(text) {
             return obj;
         }, {});
     });
+}
+
+async function handleFormSubmit(event) {
+    event.preventDefault();
+    downloadLegislatorResults()
+}
+
+function analyzeLegislatorVotes() {
+    const legislatorVotes = new Map();
+
+    // Inicializa contadores para cada legislador
+    data.legislators.forEach(legislator => {
+        legislatorVotes.set(legislator.id, {
+            id: legislator.id,
+            name: legislator.name,
+            num_supported_bills: 0,
+            num_opposed_bills: 0
+        });
+    });
+
+    // Cria um mapa de votos para bills para acesso mais rápido
+    const voteToBill = new Map(data.votes.map(vote => [vote.id, vote.bill_id]));
+
+    // Processa os resultados dos votos
+    data.voteResults.forEach(result => {
+        const legislator = legislatorVotes.get(result.legislator_id);
+        if (!legislator) return;
+
+        if (parseInt(result.vote_type) === VOTE_TYPE.SUPPORT) {
+            legislator.num_supported_bills++;
+        } else if (parseInt(result.vote_type) === VOTE_TYPE.OPPOSE) {
+            legislator.num_opposed_bills++;
+        }
+    });
+
+    return Array.from(legislatorVotes.values());
+}
+
+function downloadLegislatorResults() {
+    const results = analyzeLegislatorVotes();
+    downloadCSV(results, 'legislators-support-oppose-count.csv');
+}
+
+function downloadCSV(data, filename) {
+    const headers = Object.keys(data[0]);
+    const csvRows = [
+        headers.join(','),
+        ...data.map(row => headers.map(header => row[header]).join(','))
+    ];
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
 }
