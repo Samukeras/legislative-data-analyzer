@@ -53,7 +53,8 @@ function parseCSV(text) {
 
 async function handleFormSubmit(event) {
     event.preventDefault();
-    downloadLegislatorResults()
+    downloadLegislatorResults();
+    downloadBillResults();
 }
 
 function analyzeLegislatorVotes() {
@@ -87,9 +88,48 @@ function analyzeLegislatorVotes() {
     return Array.from(legislatorVotes.values());
 }
 
+function analyzeBillVotes() {
+    const billVotes = new Map();
+    const legislatorMap = new Map(data.legislators.map(leg => [leg.id, leg.name]));
+
+    // Inicializa contadores para cada bill
+    data.bills.forEach(bill => {
+        billVotes.set(bill.id, {
+            id: bill.id,
+            title: bill.title,
+            supporter_count: 0,
+            opposer_count: 0,
+            primary_sponsor: legislatorMap.get(bill.sponsor_id) || 'Unknown'
+        });
+    });
+
+    // Cria um mapa de votos para bills
+    const voteToBill = new Map(data.votes.map(vote => [vote.id, vote.bill_id]));
+
+    // Processa os resultados dos votos
+    data.voteResults.forEach(result => {
+        const billId = voteToBill.get(result.vote_id);
+        const bill = billVotes.get(billId);
+        if (!bill) return;
+
+        if (result.vote_type === VOTE_TYPE.SUPPORT) {
+            bill.supporter_count++;
+        } else if (result.vote_type === VOTE_TYPE.OPPOSE) {
+            bill.opposer_count++;
+        }
+    });
+
+    return Array.from(billVotes.values());
+}
+
 function downloadLegislatorResults() {
     const results = analyzeLegislatorVotes();
     downloadCSV(results, 'legislators-support-oppose-count.csv');
+}
+
+function downloadBillResults() {
+    const results = analyzeBillVotes();
+    downloadCSV(results, 'bills-analysis.csv');
 }
 
 function downloadCSV(data, filename) {
