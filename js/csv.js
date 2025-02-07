@@ -30,7 +30,13 @@ export class Parser {
      * @returns {Array<Object>} Array of objects where keys are CSV headers
      */
     static parse(csvText) {
+        if (!csvText?.trim()) {
+            throw new Error('CSV content cannot be empty');
+        }
         const lines = csvText.split(SPECS.LINE_BREAK_REGEX).filter(line => line.trim());
+        if (!lines.length) {
+            throw new Error('CSV must contain at least a header row');
+        }
         const headers = this.parseRow(lines.shift());
         return lines.map(line => this.parseLineToObject(line, headers));
     }
@@ -53,6 +59,9 @@ export class Parser {
      */
     static parseLineToObject(line, headers) {
         const row = this.parseRow(line);
+        if (row.length !== headers.length) {
+            throw new Error(`Invalid number of columns. Expected ${headers.length}, got ${row.length}`);
+        }
         return headers.reduce((obj, header, index) => {
             obj[header] = this.parseValue(row[index]);
             return obj;
@@ -74,6 +83,7 @@ export class Parser {
      * @returns {string} CSV formatted string, empty string if input is invalid
      */
     static stringify(data) {
+        if (!data || !data.length) return '';
         const headers = Object.keys(data[0]);
         const csvRows = [
             headers.join(SPECS.DELIMITER),
